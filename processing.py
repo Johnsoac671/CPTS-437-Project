@@ -1,11 +1,16 @@
-class Vector:
-    
+from sentence_transformers import SentenceTransformer
+
+class Vectorizer:
     def __init__(self):
-        self.vector = 0
-        self.label = 0
-        self.id = 0
-        self.plaintext = "0"
+        self.model = SentenceTransformer('all-MiniLM-L6-v2')
         
 
-def vectorize(data):
-    return data
+    def vectorize(self, data):
+        return self.model.encode(data).tolist()
+
+
+
+class Tweet:
+    def __init__(self, label, vector):
+        self.label = label
+        self.vector = vector
