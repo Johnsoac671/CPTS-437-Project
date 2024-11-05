@@ -1,34 +1,53 @@
-from processing import Vector, vectorize
+from processing import Vectorizer
 import math
+import pandas as pd
+import ast
+import random
 
 class KNN:
     
-    def __init__(self, vectorset, k=5):
-        self.vectorset = vectorset
+    def __init__(self, dataset, k=5):
+        self.dataset = dataset
+        self.vectorizer = Vectorizer()
         self.k = k
         
     
     def predict(self, data):
-        vectorized_data = vectorize(data)
+        vectorized_data = self.vectorizer.vectorize(data)
         
         distances = []
         
-        for vector in self.vectorset:
-            distance = self.get_distance(vector, vectorized_data)
-            distances.append((distance, vector.label))
+        for tweet in self.dataset.itertuples():
+            distance = self.get_distance(tweet.embedding, vectorized_data)
+            distances.append((distance, tweet.sentiment))
             
         distances.sort(key=lambda x: x[0])
         
         nearest = distances[:self.k]
         nearest_labels = [x[1] for x in nearest]
         
-        prediction = round(sum(nearest_labels) / self.k)
+        prediction = self.most_common(nearest_labels)
+        
+        
         
         return prediction
+
+    
+    def test(self, test_set):
+        
+        correct = 0
+        
+        for tweet in test_set.itertuples():
+            prediction = self.predict(tweet.tweet_content)
+            
+            if prediction == tweet.sentiment:
+                correct += 1
+        
+        
+        return correct / test_set.shape[0]
     
     
     def get_distance(self, vector, data):
-        
         dot_product = sum(
             [x[0] * x[1] for x in zip(vector, data)]
             )
@@ -44,3 +63,30 @@ class KNN:
             sum(
                 [x*x for x in vector]
                 ))
+        
+    
+    def most_common(self, values):
+        return max(set(values), key=values.count)
+
+
+def build_dataset():
+    df = pd.read_csv("twitterData.csv")
+    df["embedding"] = df["embedding"].apply(ast.literal_eval)
+    return df.loc[:, ["tweet_content", "sentiment", "embedding"]]
+
+
+def training_testing_split(df: pd.DataFrame, percentage, seed=random.randint(0, 999)):
+    df = df.sample(frac = 1, random_state=seed)
+    
+    train_df = df[:round(df.shape[0] - (df.shape[0] * percentage))]
+    test_df = df[round(df.shape[0] - (df.shape[0] * percentage)):]
+    
+    return train_df, test_df
+
+
+if __name__ == "__main__":
+    train, test = training_testing_split(build_dataset(), 0.2)
+    
+    bob = KNN(train, 5)
+
+    print(bob.test(test))
