@@ -47,15 +47,23 @@ class KNN:
         return correct / test_set.shape[0]
     
     
+    # def get_distance(self, vector, data):
+    #     dot_product = sum(
+    #         [x[0] * x[1] for x in zip(vector, data)]
+    #         )
+        
+    #     vec_mag = self.get_magnitude(vector)
+    #     data_mag = self.get_magnitude(data)
+        
+    #     return dot_product / (vec_mag * data_mag)
+    
+    
     def get_distance(self, vector, data):
-        dot_product = sum(
-            [x[0] * x[1] for x in zip(vector, data)]
-            )
-        
-        vec_mag = self.get_magnitude(vector)
-        data_mag = self.get_magnitude(data)
-        
-        return dot_product / (vec_mag * data_mag)
+        return math.sqrt(
+            sum(
+                [(x[0] - x[1]) ** 2 for x in zip(vector, data)]
+                ))
+
         
 
     def get_magnitude(self, vector):
@@ -70,12 +78,12 @@ class KNN:
 
 
 def build_dataset():
-    df = pd.read_csv("twitterData.csv")
+    df = pd.read_csv("twitterData1000.csv")
     df["embedding"] = df["embedding"].apply(ast.literal_eval)
     return df.loc[:, ["tweet_content", "sentiment", "embedding"]]
 
 
-def training_testing_split(df: pd.DataFrame, percentage, seed=random.randint(0, 999)):
+def training_testing_split(df: pd.DataFrame, percentage, seed=671):
     df = df.sample(frac = 1, random_state=seed)
     
     train_df = df[:round(df.shape[0] - (df.shape[0] * percentage))]
@@ -88,5 +96,7 @@ if __name__ == "__main__":
     train, test = training_testing_split(build_dataset(), 0.2)
     
     bob = KNN(train, 5)
+    for x in range(1, 100):
+        bob.k = x
 
-    print(bob.test(test))
+        print(f"K = {x}: {bob.test(test)}")
