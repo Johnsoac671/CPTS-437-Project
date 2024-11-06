@@ -7,10 +7,3 @@ class Vectorizer:
 
     def vectorize(self, data):
         return self.model.encode(data).tolist()
-
-
-
-class Tweet:
-    def __init__(self, label, vector):
-        self.label = label
-        self.vector = vector
