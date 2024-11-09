@@ -1,4 +1,7 @@
 import pandas as pd
+import ast
+import numpy as np
+
 from processing import dot_product, Vectorizer
 
 class SVM:
@@ -11,34 +14,98 @@ class SVM:
         self.C = C
         
     
-    def predict(self, model, tweet):
-        w, b = self.models[model]
+    def predict(self, tweet):
+        
+        labels = ["Positive", "Negative", "Neutral", "Irrelevant"]
+        estimates = []
         tweet = self.vectorizer.vectorize(tweet)
         
-        approx = dot_product(w, tweet) - b
+        for label in labels:
+            w, b = self.models[label]
+            
+            approx = dot_product(w, tweet) - b
+            
+            estimates.append((label, approx))
         
-        if approx == 0:
-            return 0
-        else:
-            return 1 if approx > 0 else -1
+        return max(estimates, key=lambda x: x[1])
         
     
-    def train(self, model, data):
-        _, vector_length = data.shape
+    def train(self, target, data):
+        vector_length = len(data.iloc[0]['embedding'] )
         
-        w = [0 for weight in range(vector_length)]
+        w = np.zeros(vector_length)
         b = 0
         
         for _ in range(self.iterations):
             for vector in data.itertuples():
-                dot = dot_product(vector.embedding, w)
+                vector_arr = np.array(vector.embedding)
+                
+                dot = np.dot(vector_arr, w)
                 
                 if (vector.sentiment * (dot - b)) >= 1:
-                    w = [weight - (self.learning_rate * (2 * self.C * weight)) for weight in w]
+                    w -= self.learning_rate * (2 * self.C * w)
                     
                 else:
-                    correction_dot = dot_product(vector.embedding, [vector.sentiment for _ in range(vector_length)])
-                    w = [weight - (self.learning_rate * (2 * self.C * weight - correction_dot)) for weight in w]
+                    w -= self.learning_rate * (2 * self.C * w - np.dot(vector_arr, vector.sentiment))
+                    
                     b -= self.learning_rate * vector.sentiment
         
-        self.models[model] = (w, b)
+        self.models[target] = (w, b)
+    
+    
+    def test(self, test_set):
+        correct = 0
+        
+        for tweet in test_set.itertuples():
+            prediction, approx = self.predict(tweet.tweet_content)
+            
+            if prediction == tweet.sentiment:
+                correct += 1
+        
+        
+        return correct / test_set.shape[0]
+
+
+
+def build_dataset(file_path):
+    df = pd.read_csv(file_path)
+    df["embedding"] = df["embedding"].apply(ast.literal_eval)
+    
+    return df.loc[:, ["tweet_content", "sentiment", "embedding"]]
+
+
+def replace_labels(df: pd.DataFrame, target):
+    df_temp = df.copy()
+    df_temp["sentiment"] = df_temp["sentiment"].apply(lambda x: 1 if x == target else -1)
+    return df_temp
+
+
+def training_testing_split(df, percentage, seed=671):
+    """splits the dataset into training and testing data"""
+    
+    df = df.sample(frac = 1, random_state=seed)
+    
+    train_df = df[:round(df.shape[0] - (df.shape[0] * percentage))]
+    test_df = df[round(df.shape[0] - (df.shape[0] * percentage)):]
+    
+    return train_df, test_df
+
+
+bob = SVM(1000, 0.001, 1)
+dataset = build_dataset("twitterData1000.csv")
+training, testing = training_testing_split(dataset, 0.2)
+
+labels = ["Positive", "Negative", "Neutral", "Irrelevant"]
+
+for label in labels:
+    training_temp = replace_labels(training, label)
+    bob.train(label, training_temp)
+
+
+print(bob.test(testing))
+
+    
+
+
+
+
