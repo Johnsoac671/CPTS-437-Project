@@ -4,7 +4,7 @@ import pandas as pd
 import ast
 
 class KNN:
-    
+    # te 
     def __init__(self, dataset, k=5):
         self.dataset = dataset
         self.vectorizer = Vectorizer()
