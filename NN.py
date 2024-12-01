@@ -8,10 +8,12 @@ class Layer:
         self.learning_rate = learning_rate
         
         self.z = []
+        self.outputs = []
+        self.errors = []
     
     
     def forward(self, inputs):
-        outputs = []
+        self.outputs = []
         num_inputs = len(inputs)
         
         self.z = []
@@ -23,9 +25,9 @@ class Layer:
             self.z.append(preactivation_value)
             
             activation_output = self.activation_function(preactivation_value)
-            outputs.append(activation_output)
+            self.outputs.append(activation_output)
         
-        return outputs
+        return self.outputs
     
     
     def derivative(self, value):
@@ -34,8 +36,36 @@ class Layer:
     
     def backward(self, inputs, target, next_layer=None):
         
-        for index, value in enumerate(inputs):
-            derivative_z = value * self.derivative(self.z[index])
+        errors = []
+        
+        if not next_layer:
+            for value in self.z:
+                output = self.activation_function(value)
+                error = (output - target) * self.derivative(value)
+                errors.append(error)
+        
+        else:
+            
+            for index, value in enumerate(self.z):
+                error = 0
+                
+                for next_index, weight in enumerate(next_layer.weights):
+                    error += next_layer.errors[next_index] * weight[index]
+                
+                errors.append(error * self.derivative(value))
+        
+        
+        self.errors = errors
+        
+        for weight_index, weight in self.weights:
+            for input_index, input_value in inputs:
+                weight[input_index] -= self.learning_rate * self.error[weight_index] * input_value
+        
+        
+        for bias_index, bias in self.biases:
+            bias -= self.learning_rate * self.errors[bias_index]
+                
+            
 
     
         
