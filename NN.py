@@ -6,8 +6,8 @@ from numpy import exp
 class Layer:
     def __init__(self, input_size, output_size, activation_function, learning_rate):
         
-        self.weights = [[0.0 for _ in range(input_size)] for _ in range(output_size)]
-        self.biases = [0.0 for _ in range(output_size)]
+        self.weights = [[random.uniform(-1, 1) for _ in range(input_size)] for _ in range(output_size)]
+        self.biases = [random.uniform(-1, 1) for _ in range(output_size)]
         
         self.activation_function = activation_function
         self.learning_rate = learning_rate
@@ -46,6 +46,7 @@ class Layer:
         if not next_layer:
             for value in self.z:
                 output = self.activation_function(value)
+                print(target)
                 error = (output - target) * self.derivative(value)
                 errors.append(error)
         
@@ -132,7 +133,7 @@ parameters = [[len(twitterData.iloc[0]['embedding']), 4]]
 NeuralNetwork = Network(parameters)
 
 training, testing = training_testing_split(twitterData, 0.2)
-
+NeuralNetwork.train(training[['embedding', 'sentiment']].values.tolist(), epochs = 5)
 result = NeuralNetwork.predict(training.iloc[0]['embedding'])
 
 print(result)
