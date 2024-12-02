@@ -3,6 +3,7 @@ import math
 import pandas as pd
 import numpy as np
 import ast
+import matplotlib.pyplot as plt
 
 class KNN:
     def __init__(self, dataset=None, k=5):
@@ -117,8 +118,9 @@ if __name__ == "__main__":
     classifier = KNN()
     dataset = build_dataset()
     best_k = {"k": 0, "accuracy": 0.0, "precision": {}, "recall": {}}
+    KNNPerformanceOverTime = {}
 
-    for k in range(1, 20):
+    for k in range(1, 21):
         total_accuracy = 0
         total_precision = {"Positive": 0, "Negative": 0, "Neutral": 0}
         total_recall = {"Positive": 0, "Negative": 0, "Neutral": 0}
@@ -145,6 +147,8 @@ if __name__ == "__main__":
         avg_precision = {label: round(total_precision[label] / epochs, 3) for label in total_precision}
         avg_recall = {label: round(total_recall[label] / epochs, 3) for label in total_recall}
 
+        KNNPerformanceOverTime[k] = (avg_accuracy * 100)
+
         # check if current k outperforms previous best k
         if avg_accuracy > best_k["accuracy"]:
             best_k = {"k": k, "accuracy": avg_accuracy, "precision": avg_precision, "recall": avg_recall}
@@ -152,3 +156,12 @@ if __name__ == "__main__":
 
     print(f"Best: k = {best_k['k']}, Accuracy: {round(best_k['accuracy'], 5)}, "
           f"Precision: {best_k['precision']}, Recall: {best_k['recall']}")
+    
+    plt.plot(KNNPerformanceOverTime.keys(), KNNPerformanceOverTime.values(), label='Accuracy')
+
+    plt.xlabel('Neighbors')
+    plt.ylabel('Accuracy %')
+    plt.title('KNN Accuracy')
+    plt.xticks([int(x) for x in KNNPerformanceOverTime.keys()])
+    plt.grid(axis='y', linestyle='--', color='gray', alpha=0.5)
+    plt.show()
