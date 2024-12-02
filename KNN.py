@@ -6,16 +6,19 @@ import ast
 
 class KNN:
     def __init__(self, dataset=None, k=5):
-        self.dataset = dataset
+        self.dataset = dataset    
         self.k = k
+    
+    
+    def update_dataset(self, new_data):
+        self.dataset = new_data
+        self.embeddings = np.vstack(self.dataset["embedding"].to_numpy())
         
     
-    def predict(self, data):
+    def predict(self, tweet):
         """returns the predicted sentiment of the given tweet"""
         
-        embeddings = np.vstack(self.dataset["embedding"].to_numpy())
-        
-        distances = np.sqrt(np.sum((embeddings - data) ** 2, axis=1))
+        distances = np.sqrt(np.sum((self.embeddings - tweet) ** 2, axis=1))
             
         sentiments = sorted(zip(distances, self.dataset["sentiment"]), key=lambda x: x[0])
         
@@ -25,7 +28,7 @@ class KNN:
         return self.most_common(nearest_sentiments)
 
     
-    def test(self, test_set):
+    def test(self, test_set: pd.DataFrame):
         """predicts each test tweet, and returns the accuracy"""
         
         correct = 0
@@ -111,7 +114,7 @@ if __name__ == "__main__":
         for epoch in range(epochs):
             train, test = training_testing_split(dataset, 0.2)
             
-            classifier.dataset = train
+            classifier.update_dataset(train)
             classifier.k = k
 
             average_accuracy += classifier.test(test)
