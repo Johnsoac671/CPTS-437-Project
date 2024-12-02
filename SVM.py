@@ -92,20 +92,22 @@ def training_testing_split(df, percentage, seed=None):
     return train_df, test_df
 
 
-labels = ["Positive", "Negative", "Neutral", "Irrelevant"]
+labels = ["Positive", "Negative", "Neutral"]
 
-classifier = SVM(labels, 1000, 0.001, 1)
+classifier = SVM(labels, 1000, 0.001, 0.1)
 dataset = build_dataset("twitterData1000.csv")
-training, testing = training_testing_split(dataset, 0.2)
+
+for _ in range(5):
+    training, testing = training_testing_split(dataset, 0.2)
 
 
 
-for label in labels:
-    training_temp = replace_labels(training, label)
-    classifier.train(label, training_temp)
+    for label in labels:
+        training_temp = replace_labels(training, label)
+        classifier.train(label, training_temp)
 
 
-print(classifier.test(testing))
+    print(classifier.test(testing))
 
     
 
