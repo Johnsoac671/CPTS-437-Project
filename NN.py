@@ -1,3 +1,5 @@
+import random
+
 class Layer:
     def __init__(self, input_size, output_size, activation_function, learning_rate):
         
@@ -77,9 +79,25 @@ class Network:
 
     
     
-    def train(self):
-        pass
+    def train(self, training_data, epochs):
+        # For the specified epochs, run back propogation on the network
+        for epoch in range(epochs):
+            random.shuffle(training_data)
+            for inputs, target, in training_data:
+                
+                # Forward Pass of the input
+                result = self.predict(inputs)
+
+                # Backward Pass of the input
+                for i in range(len(self.layers) - 1, -1, -1):
+                    next_layer = self.layers[i + 1] if i + 1 < len(self.layers) else None
+                    self.layers[i].backward(inputs, target, next_layer)
     
-    
-    def predict(self):
-        pass
+    def predict(self, inputs):
+        # Pass inputs forward through each layer
+        for layer in self.layers:
+            inputs = layer.forward(inputs)
+        
+        # Return the final product
+        return inputs
+
