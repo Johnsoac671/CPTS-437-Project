@@ -108,7 +108,7 @@ if __name__ == "__main__":
     dataset = build_dataset()
     best = (0, 0.0)
     
-    for k in range(1, 100):
+    for k in range(1, 20):
         accuracy = 0
         
         epochs = 5
@@ -125,6 +125,6 @@ if __name__ == "__main__":
         if average_accuracy > best[1]:
             best = (k, average_accuracy)
         
-        print(f"{k}: {round(average_accuracy / epochs, 5)}")
+        print(f"{k}: {round(average_accuracy, 5)}")
 
-    print(f"Best: {best}")
+    print(f"Best: k = {best[0]}, Accuracy: {round(best[1], 5)}")
