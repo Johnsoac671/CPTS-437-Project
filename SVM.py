@@ -8,7 +8,6 @@ class SVM:
     
     def __init__(self, iterations, learning_rate, C):
         self.models = {}
-        self.vectorizer = Vectorizer()
         self.iterations = iterations
         self.learning_rate = learning_rate
         self.C = C
@@ -18,7 +17,6 @@ class SVM:
         
         labels = ["Positive", "Negative", "Neutral", "Irrelevant"]
         estimates = []
-        tweet = self.vectorizer.vectorize(tweet)
         
         for label in labels:
             w, b = self.models[label]
@@ -57,7 +55,7 @@ class SVM:
         correct = 0
         
         for tweet in test_set.itertuples():
-            prediction, approx = self.predict(tweet.tweet_content)
+            prediction, _ = self.predict(tweet.embedding)
             
             if prediction == tweet.sentiment:
                 correct += 1
@@ -80,10 +78,13 @@ def replace_labels(df: pd.DataFrame, target):
     return df_temp
 
 
-def training_testing_split(df, percentage, seed=671):
+def training_testing_split(df, percentage, seed=None):
     """splits the dataset into training and testing data"""
     
-    df = df.sample(frac = 1, random_state=seed)
+    if seed:
+        df = df.sample(frac=1, random_state=seed)
+    else:
+        df = df.sample(frac=1)
     
     train_df = df[:round(df.shape[0] - (df.shape[0] * percentage))]
     test_df = df[round(df.shape[0] - (df.shape[0] * percentage)):]
@@ -91,7 +92,7 @@ def training_testing_split(df, percentage, seed=671):
     return train_df, test_df
 
 
-bob = SVM(1000, 0.001, 1)
+classifier = SVM(1000, 0.001, 1)
 dataset = build_dataset("twitterData1000.csv")
 training, testing = training_testing_split(dataset, 0.2)
 
@@ -99,10 +100,10 @@ labels = ["Positive", "Negative", "Neutral", "Irrelevant"]
 
 for label in labels:
     training_temp = replace_labels(training, label)
-    bob.train(label, training_temp)
+    classifier.train(label, training_temp)
 
 
-print(bob.test(testing))
+print(classifier.test(testing))
 
     
 
