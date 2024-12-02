@@ -1,34 +1,28 @@
 from processing import Vectorizer
 import math
 import pandas as pd
+import numpy as np
 import ast
 
 class KNN:
-    # te 
-    def __init__(self, dataset, k=5):
+    def __init__(self, dataset=None, k=5):
         self.dataset = dataset
-        self.vectorizer = Vectorizer()
         self.k = k
         
     
     def predict(self, data):
         """returns the predicted sentiment of the given tweet"""
         
-        vectorized_data = self.vectorizer.vectorize(data)
+        embeddings = np.vstack(self.dataset["embedding"].to_numpy())
         
-        distances = []
-        
-        for tweet in self.dataset.itertuples():
-            distance = self.get_distance(tweet.embedding, vectorized_data)
-            distances.append((distance, tweet.sentiment))
+        distances = np.sqrt(np.sum((embeddings - data) ** 2, axis=1))
             
-        distances.sort(key=lambda x: x[0])
+        sentiments = sorted(zip(distances, self.dataset["sentiment"]), key=lambda x: x[0])
         
-        nearest = distances[:self.k]
-        nearest_labels = [x[1] for x in nearest]
+        nearest = sentiments[:self.k]
+        nearest_sentiments = [x[1] for x in nearest]
         
-        prediction = self.most_common(nearest_labels)
-        return prediction
+        return self.most_common(nearest_sentiments)
 
     
     def test(self, test_set):
@@ -37,7 +31,7 @@ class KNN:
         correct = 0
         
         for tweet in test_set.itertuples():
-            prediction = self.predict(tweet.tweet_content)
+            prediction = self.predict(tweet.embedding)
             
             if prediction == tweet.sentiment:
                 correct += 1
@@ -47,7 +41,7 @@ class KNN:
     
     
     # def get_distance(self, vector, data):
-        """returns the cosine similarity between the two vectors"""
+    #   """returns the cosine similarity between the two vectors"""
         
     #     dot_product = sum(
     #         [x[0] * x[1] for x in zip(vector, data)]
@@ -59,15 +53,13 @@ class KNN:
     #     return dot_product / (vec_mag * data_mag)
     
     
-    def get_distance(self, vector, data):
-        """returns the (Euclidian) distance between the given vectors"""
+    # def get_distance(self, vector, data):
+    #     """returns the (Euclidian) distance between the given vectors"""
         
-        return math.sqrt(
-            sum(
-                [(x[0] - x[1]) ** 2 for x in zip(vector, data)]
-                ))
-
-        
+    #     return math.sqrt(
+    #         sum(
+    #             [(x[0] - x[1]) ** 2 for x in zip(vector, data)]
+    #             ))
 
     def get_magnitude(self, vector):
         """returns the magnitude of the given vector"""
@@ -92,10 +84,13 @@ def build_dataset(csv="twitterData1000.csv"):
     return df.loc[:, ["tweet_content", "sentiment", "embedding"]]
 
 
-def training_testing_split(df, percentage, seed=671):
+def training_testing_split(df, percentage, seed=None):
     """splits the dataset into training and testing data"""
     
-    df = df.sample(frac = 1, random_state=seed)
+    if seed:
+        df = df.sample(frac=1, random_state=seed)
+    else:
+        df = df.sample(frac=1)
     
     train_df = df[:round(df.shape[0] - (df.shape[0] * percentage))]
     test_df = df[round(df.shape[0] - (df.shape[0] * percentage)):]
@@ -104,10 +99,21 @@ def training_testing_split(df, percentage, seed=671):
 
 
 if __name__ == "__main__":
-    train, test = training_testing_split(build_dataset(), 0.2)
-    
-    bob = KNN(train, 5)
-    for x in range(1, 100):
-        bob.k = x
 
-        print(f"K = {x}: {bob.test(test)}")
+    
+    classifier = KNN()
+    dataset = build_dataset()
+    
+    for k in range(1, 100):
+        average_accuracy = 0
+        
+        epochs = 5
+        for epoch in range(epochs):
+            train, test = training_testing_split(dataset, 0.2)
+            
+            classifier.dataset = train
+            classifier.k = k
+
+            average_accuracy += classifier.test(test)
+        
+        print(f"{k}: {round(average_accuracy / epochs, 5)}")
