@@ -128,9 +128,11 @@ print(twitterData.iloc[0])
 print('----------')
 print(twitterData.iloc[0]['embedding'])
 
-parameters = [len(twitterData.iloc[0]['embedding']), 4]
+parameters = [[len(twitterData.iloc[0]['embedding']), 4]]
 NeuralNetwork = Network(parameters)
 
 training, testing = training_testing_split(twitterData, 0.2)
 
 result = NeuralNetwork.predict(training.iloc[0]['embedding'])
+
+print(result)
