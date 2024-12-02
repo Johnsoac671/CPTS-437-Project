@@ -31,16 +31,28 @@ class KNN:
     def test(self, test_set: pd.DataFrame):
         """predicts each test tweet, and returns the accuracy"""
         
+        labels = ["Positive", "Negative", "Neutral"]
+        precisions = {label:[0, 0] for label in labels} # True Positives : True and False Positives
+        recalls = {label:[0, 0] for label in labels} # True Positives : True Positives and False Negatives
+        
         correct = 0
         
         for tweet in test_set.itertuples():
             prediction = self.predict(tweet.embedding)
             
+            precisions[prediction][1] += 1
+            recalls[tweet.sentiment][1] += 1
+            
             if prediction == tweet.sentiment:
                 correct += 1
+                precisions[prediction][0] += 1
+                recalls[tweet.sentiment][0] += 1
         
+        accuracy = correct / test_set.shape[0]
+        precision = {key : value[0] / value[1] for key, value in precisions.items()}
+        recall = {key : value[0] / value[1] for key, value in recalls.items()}
         
-        return correct / test_set.shape[0]
+        return accuracy, precision, recall
     
     
     # def get_distance(self, vector, data):
@@ -102,29 +114,41 @@ def training_testing_split(df, percentage, seed=None):
 
 
 if __name__ == "__main__":
-
-    
     classifier = KNN()
     dataset = build_dataset()
-    best = (0, 0.0)
-    
+    best_k = {"k": 0, "accuracy": 0.0, "precision": {}, "recall": {}}
+
     for k in range(1, 20):
-        accuracy = 0
-        
+        total_accuracy = 0
+        total_precision = {"Positive": 0, "Negative": 0, "Neutral": 0}
+        total_recall = {"Positive": 0, "Negative": 0, "Neutral": 0}
         epochs = 5
+
         for epoch in range(epochs):
-            train, test = training_testing_split(dataset, 0.2)
-            
+
+            train, test = training_testing_split(dataset, percentage=0.2)
+
+            # test KNN on current k value
             classifier.update_dataset(train)
             classifier.k = k
+            accuracy, precision, recall = classifier.test(test)
 
-            accuracy += classifier.test(test)
-        
-        average_accuracy = accuracy / epochs
-        
-        if average_accuracy > best[1]:
-            best = (k, average_accuracy)
-        
-        print(f"{k}: {round(average_accuracy, 5)}")
+            # update performance metrics
+            total_accuracy += accuracy
+            for label in precision:
+                total_precision[label] += precision[label]
+            for label in recall:
+                total_recall[label] += recall[label]
 
-    print(f"Best: k = {best[0]}, Accuracy: {round(best[1], 5)}")
+        # calculate average metric for the current k value
+        avg_accuracy = total_accuracy / epochs
+        avg_precision = {label: round(total_precision[label] / epochs, 3) for label in total_precision}
+        avg_recall = {label: round(total_recall[label] / epochs, 3) for label in total_recall}
+
+        # check if current k outperforms previous best k
+        if avg_accuracy > best_k["accuracy"]:
+            best_k = {"k": k, "accuracy": avg_accuracy, "precision": avg_precision, "recall": avg_recall}
+
+
+    print(f"Best: k = {best_k['k']}, Accuracy: {round(best_k['accuracy'], 5)}, "
+          f"Precision: {best_k['precision']}, Recall: {best_k['recall']}")
