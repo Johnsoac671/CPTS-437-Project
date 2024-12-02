@@ -6,19 +6,19 @@ from processing import dot_product, Vectorizer
 
 class SVM:
     
-    def __init__(self, iterations, learning_rate, C):
+    def __init__(self, labels, iterations, learning_rate, C):
         self.models = {}
+        self.labels = labels
         self.iterations = iterations
         self.learning_rate = learning_rate
         self.C = C
         
     
-    def predict(self, tweet):
+    def predict(self, tweet: list):
         
-        labels = ["Positive", "Negative", "Neutral", "Irrelevant"]
         estimates = []
         
-        for label in labels:
+        for label in self.labels:
             w, b = self.models[label]
             
             approx = dot_product(w, tweet) - b
@@ -92,11 +92,13 @@ def training_testing_split(df, percentage, seed=None):
     return train_df, test_df
 
 
-classifier = SVM(1000, 0.001, 1)
+labels = ["Positive", "Negative", "Neutral", "Irrelevant"]
+
+classifier = SVM(labels, 1000, 0.001, 1)
 dataset = build_dataset("twitterData1000.csv")
 training, testing = training_testing_split(dataset, 0.2)
 
-labels = ["Positive", "Negative", "Neutral", "Irrelevant"]
+
 
 for label in labels:
     training_temp = replace_labels(training, label)
