@@ -106,9 +106,10 @@ if __name__ == "__main__":
     
     classifier = KNN()
     dataset = build_dataset()
+    best = (0, 0.0)
     
     for k in range(1, 100):
-        average_accuracy = 0
+        accuracy = 0
         
         epochs = 5
         for epoch in range(epochs):
@@ -117,6 +118,13 @@ if __name__ == "__main__":
             classifier.update_dataset(train)
             classifier.k = k
 
-            average_accuracy += classifier.test(test)
+            accuracy += classifier.test(test)
+        
+        average_accuracy = accuracy / epochs
+        
+        if average_accuracy > best[1]:
+            best = (k, average_accuracy)
         
         print(f"{k}: {round(average_accuracy / epochs, 5)}")
+
+    print(f"Best: {best}")
